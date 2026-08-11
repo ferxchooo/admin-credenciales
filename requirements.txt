@@ -1,0 +1,6 @@
+flask
+pymongo
+gunicorn
+dnspython
+pandas
+openpyxl
