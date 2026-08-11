@@ -3,14 +3,12 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# Enlace de conexión configurado con tus credenciales
+# Enlace a tu MongoDB Atlas
 MONGO_URI = "mongodb+srv://al222410839_db_user:fernando.123@cluster0.5x95bfb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 client = MongoClient(MONGO_URI)
 db = client["portal_de_gestion"]
 collection = db["credenciales"]
-
-# --- RUTAS ---
 
 @app.route("/")
 def index():
@@ -18,19 +16,19 @@ def index():
 
 @app.route("/api/credenciales", methods=["GET"])
 def get_credenciales():
-    # Obtiene todos los registros desde MongoDB
-    data = list(collection.find({}, {"_id": False}))
-    return jsonify(data)
+    return jsonify(list(collection.find({}, {"_id": False})))
 
 @app.route("/api/credenciales/actualizar", methods=["POST"])
 def actualizar_credencial():
     req_data = request.json
     num_cred = req_data.get("numero de credencial")
     
-    # Actualiza los campos en MongoDB
+    # Aquí estamos enviando todos los datos al mismo tiempo
     collection.update_one(
         {"numero de credencial": num_cred},
         {"$set": {
+            "nombre": req_data.get("nombre"),
+            "tipo de tramite": req_data.get("tipo de tramite"),
             "entregada": req_data.get("entregada"),
             "persona a la que se le entrego": req_data.get("persona a la que se le entrego"),
             "numero de telefono": req_data.get("numero de telefono"),
@@ -40,9 +38,9 @@ def actualizar_credencial():
             "vigencia": req_data.get("vigencia"),
             "norma": req_data.get("norma")
         }},
-        upsert=True # Crea el registro si no existe
+        upsert=True
     )
-    return jsonify({"success": True, "message": "¡Actualizado en la nube con éxito!"})
+    return jsonify({"success": True})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run()
