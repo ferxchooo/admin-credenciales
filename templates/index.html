@@ -384,19 +384,32 @@
         });
     }
 
-    // --- NUEVA FUNCIÓN PARA DESCARGAR EXCEL ---
+    // --- NUEVA FUNCIÓN PARA DESCARGAR EXCEL (CON ORDENAMIENTO) ---
     function descargarExcel() {
         if (credenciales.length === 0) {
             alert("Aún no hay registros en la base de datos para exportar.");
             return;
         }
 
-        // Creamos una hoja de cálculo a partir de todos los datos en crudo que llegaron de MongoDB
-        const worksheet = XLSX.utils.json_to_sheet(credenciales);
+        // 1. Clonar y ordenar los datos: "Sí" primero, "No" después
+        let datosOrdenados = [...credenciales].sort((a, b) => {
+            let valA = (a.entregada || "").toLowerCase();
+            let valB = (b.entregada || "").toLowerCase();
+            
+            // Convertimos a 1 si es "sí" o "si", y a 0 si es otra cosa
+            let pesoA = (valA === "sí" || valA === "si") ? 1 : 0;
+            let pesoB = (valB === "sí" || valB === "si") ? 1 : 0;
+            
+            // Ordenamos de mayor a menor (los 1 van primero)
+            return pesoB - pesoA; 
+        });
+
+        // 2. Creamos la hoja de cálculo usando la lista ya ordenada
+        const worksheet = XLSX.utils.json_to_sheet(datosOrdenados);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Base de Credenciales");
         
-        // Guardamos y forzamos la descarga
+        // 3. Guardamos y forzamos la descarga
         XLSX.writeFile(workbook, "Reporte_Credenciales_Turismo.xlsx");
     }
 </script>
