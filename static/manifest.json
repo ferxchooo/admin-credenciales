@@ -7,7 +7,7 @@
   "theme_color": "#691C32",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "src": "/static/colibrilogo.png",
       "sizes": "512x512",
       "type": "image/png"
     }
