@@ -17,10 +17,10 @@
         body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .navbar-custom { background-color: var(--guinda); color: white; padding: 15px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .navbar-custom h2 { margin: 0; font-size: 1.5rem; font-weight: 600; }
-        .kpi-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--dorado); transition: transform 0.2s; }
+        .kpi-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--dorado); transition: transform 0.2s; height: 100%; }
         .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
         .kpi-card h3 { margin: 0; font-size: 2rem; color: var(--guinda); font-weight: 700; }
-        .kpi-card p { margin: 0; color: var(--gris); font-size: 0.9rem; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; line-height: 1.2; }
+        .kpi-card p { margin: 0; color: var(--gris); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; line-height: 1.2; }
         .table-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; }
         .badge-si { background-color: var(--verde); color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; display: inline-block; min-width: 40px; text-align: center; }
         .badge-no { background-color: var(--gris); color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; display: inline-block; min-width: 40px; text-align: center; }
@@ -44,33 +44,41 @@
             <i class="fas fa-plus me-2"></i>Nueva Credencial
         </button>
     </div>
-    <!-- KPIs -->
-    <div class="row g-3">
-        <div class="col-md-3">
+    
+    <!-- KPIs (Ajustado a 5 columnas para que quepa la de Canjes) -->
+    <div class="row row-cols-1 row-cols-md-5 g-3 mb-4">
+        <div class="col">
             <div class="kpi-card">
                 <p>Total Registradas</p>
                 <h3 id="kpi-total">0</h3>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="kpi-card" style="border-left-color: var(--guinda);">
                 <p>Acreditación Inicial</p>
                 <h3 id="kpi-inicial">0</h3>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="kpi-card" style="border-left-color: #17a2b8;">
                 <p>Refrendos</p>
                 <h3 id="kpi-refrendos">0</h3>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
+            <div class="kpi-card" style="border-left-color: #ff9800;">
+                <p>Canjes</p>
+                <h3 id="kpi-canjes">0</h3>
+            </div>
+        </div>
+        <div class="col">
             <div class="kpi-card" style="border-left-color: var(--verde);">
                 <p>Entregadas</p>
                 <h3 id="kpi-entregadas">0</h3>
             </div>
         </div>
     </div>
+
     <!-- Tabla -->
     <div class="table-container">
         <div class="table-responsive">
@@ -189,7 +197,6 @@
     let dataTable;
 
     $(document).ready(function() {
-        // Cargar datos directamente desde MongoDB a través del servidor Flask
         cargarCredenciales();
     });
 
@@ -209,13 +216,21 @@
 
     function updateKPIs() {
         let total = credenciales.length;
-        let inicial = credenciales.filter(c => c['tipo de tramite'] && c['tipo de tramite'].toLowerCase().includes('inicial')).length;
+        
+        // Atrapa "acreditación", "Acreditación inicial", etc. sin importar acentos
+        let inicial = credenciales.filter(c => c['tipo de tramite'] && c['tipo de tramite'].toLowerCase().includes('acreditaci')).length;
+        
         let refrendos = credenciales.filter(c => c['tipo de tramite'] && c['tipo de tramite'].toLowerCase().includes('refrendo')).length;
+        
+        // Nuevo contador exclusivo para Canjes
+        let canjes = credenciales.filter(c => c['tipo de tramite'] && c['tipo de tramite'].toLowerCase().includes('canje')).length;
+        
         let entregadas = credenciales.filter(c => c['entregada'] && (c['entregada'].toLowerCase() === 'sí' || c['entregada'].toLowerCase() === 'si')).length;
 
         $('#kpi-total').text(total);
         $('#kpi-inicial').text(inicial);
         $('#kpi-refrendos').text(refrendos);
+        $('#kpi-canjes').text(canjes);
         $('#kpi-entregadas').text(entregadas);
     }
 
@@ -290,7 +305,7 @@
             $('#form-tramite').val('Refrendo');
         } else if(tramiteLower.includes('canje')) { 
             $('#form-tramite').val('Canje');
-        } else if(tramiteLower.includes('expedición')) { 
+        } else if(tramiteLower.includes('expedición') || tramiteLower.includes('expedicion')) { 
             $('#form-tramite').val('Acreditación inicial / Expedición');
         } else { 
             $('#form-tramite').val('Acreditación inicial');
@@ -321,7 +336,6 @@
             "numero de telefono": $('#form-telefono').val()
         };
 
-        // Enviar los datos actualizados a Python para guardarlos permanentemente en MongoDB
         $.ajax({
             url: '/api/credenciales/actualizar',
             type: 'POST',
@@ -329,7 +343,7 @@
             data: JSON.stringify(newCred),
             success: function(res) {
                 console.log(res.message);
-                cargarCredenciales(); // Recarga la tabla con los datos frescos de MongoDB
+                cargarCredenciales(); 
                 modal.hide();
             },
             error: function(err) {
