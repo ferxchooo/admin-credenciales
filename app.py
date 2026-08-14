@@ -1,5 +1,6 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from pymongo import MongoClient
+import os
 
 app = Flask(__name__)
 
@@ -12,38 +13,17 @@ collection = db["credenciales"]
 
 @app.route("/")
 def index():
-    # 1. Total absoluto de registros en la colección
-    total_registradas = collection.count_documents({})
+    return render_template("index.html")
 
-    # 2. Conteo de Acreditación (incluye variaciones)
-    acreditacion_inicial = collection.count_documents({
-        "tipo de tramite": {"$regex": r"^acreditaci[oó]n", "$options": "i"}
-    })
-    
-    # 3. Conteo exclusivo de Refrendos
-    refrendos = collection.count_documents({
-        "tipo de tramite": {"$regex": r"^refrendo", "$options": "i"}
-    })
+# --- NUEVAS RUTAS PARA LA APP INSTALABLE ---
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
 
-    # 4. Conteo exclusivo de Canjes
-    canjes = collection.count_documents({
-        "tipo de tramite": {"$regex": r"^canje", "$options": "i"}
-    })
-
-    # 5. Conteo de Entregadas
-    entregadas = collection.count_documents({
-        "entregada": {"$in": ["Sí", "Si", "si", "SI", "SÍ", True]}
-    })
-
-    # Enviamos los conteos a la plantilla index.html
-    return render_template(
-        "index.html",
-        total=total_registradas,
-        acreditacion=acreditacion_inicial,
-        refrendos=refrendos,
-        canjes=canjes,
-        entregadas=entregadas
-    )
+@app.route('/sw.js')
+def service_worker():
+    return send_from_directory('static', 'sw.js')
+# -------------------------------------------
 
 @app.route("/api/credenciales", methods=["GET"])
 def get_credenciales():
@@ -54,7 +34,6 @@ def actualizar_credencial():
     req_data = request.json
     num_cred = req_data.get("numero de credencial")
     
-    # Aquí estamos enviando todos los datos al mismo tiempo
     collection.update_one(
         {"numero de credencial": num_cred},
         {"$set": {
