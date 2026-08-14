@@ -12,7 +12,38 @@ collection = db["credenciales"]
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # 1. Total absoluto de registros en la colección
+    total_registradas = collection.count_documents({})
+
+    # 2. Conteo de Acreditación (incluye variaciones)
+    acreditacion_inicial = collection.count_documents({
+        "tipo de tramite": {"$regex": r"^acreditaci[oó]n", "$options": "i"}
+    })
+    
+    # 3. Conteo exclusivo de Refrendos
+    refrendos = collection.count_documents({
+        "tipo de tramite": {"$regex": r"^refrendo", "$options": "i"}
+    })
+
+    # 4. Conteo exclusivo de Canjes
+    canjes = collection.count_documents({
+        "tipo de tramite": {"$regex": r"^canje", "$options": "i"}
+    })
+
+    # 5. Conteo de Entregadas
+    entregadas = collection.count_documents({
+        "entregada": {"$in": ["Sí", "Si", "si", "SI", "SÍ", True]}
+    })
+
+    # Enviamos los conteos a la plantilla index.html
+    return render_template(
+        "index.html",
+        total=total_registradas,
+        acreditacion=acreditacion_inicial,
+        refrendos=refrendos,
+        canjes=canjes,
+        entregadas=entregadas
+    )
 
 @app.route("/api/credenciales", methods=["GET"])
 def get_credenciales():
