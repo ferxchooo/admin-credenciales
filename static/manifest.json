@@ -1,6 +1,6 @@
 {
-  "name": "Portal de Gestión",
-  "short_name": "Portal Gestión",
+  "name": "Base de Datos de Credenciales",
+  "short_name": "Base Credenciales",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f6f9",
